@@ -14,7 +14,7 @@ class NMCScraper():
 
 	def setupDatabase(self) -> int:
 		"""
-		Check the status of he Database and return a status code
+		Check the status of he Database and return a status code 
 
 		Returns:
 			int: status code
@@ -29,14 +29,14 @@ class NMCScraper():
 			str: URL from User
 		"""
 		fprint("Please provide a start URL (A link to a Profile)")
-		if self.testURL(URL := input("==> ")):
-			return URL
+		if self.testURL(url := input("==> ")):
+			return url
 		else:
 			clearConsole()
 			fprint("Input is not a valid NameMC Profile URL")
 			self.urlInput()
 
-	def testURL(self,URL) -> bool:
+	def testURL(self,url) -> bool:
 		"""
 		Takes a URL as String and tests for NameMC Profile structure
 
@@ -47,8 +47,8 @@ class NMCScraper():
 			bool: If the given URL has NameMC Structure or not
 		"""
 		# Sample URL: https://namemc.com/profile/JustCallMeSimon
-		if URL.startswith("https://namemc.com/profile/"):
-			MCname = URL.replace("https://namemc.com/profile/","").split(".")
+		if url.startswith("https://namemc.com/profile/"):
+			MCname = url.replace("https://namemc.com/profile/","").split(".")
 			if len(MCname[0]) in range(3,17):
 
 				#TODO and only upper lower and number
@@ -62,7 +62,7 @@ class NMCScraper():
 	def start(self):
 		toBeCrawled = Queue(0)
 		#initial crawl of first Page
-		newURLS,Name,prevNames,UUID,UUID2 = self.crawlURL(self.startURL)
+		newURLS,Name,prevNames,uuID,uuID2 = self.crawlURL(self.startURL)
 		#add all new urls into q
 		#loop through bla bla bla
 
