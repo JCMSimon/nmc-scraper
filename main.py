@@ -84,7 +84,6 @@ class NMCScraper():
 		pass
 
 
-
 def fprint(text) -> None:
 	"""
 	Takes a Message and adds a prefix before printing
