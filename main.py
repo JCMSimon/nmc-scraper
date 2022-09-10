@@ -2,9 +2,6 @@ import os
 import sqlite3 as sqlite
 from queue import Queue
 
-import bs4 as bs
-import requests
-
 
 class NMCScraper():
 	def __init__(self) -> None:
@@ -79,10 +76,8 @@ class NMCScraper():
 			nextURL = toBeCrawled.get()
 			newURLS,Name,prevNames,uuID,uuID2 = self.crawlURL(next)
 
-	def crawlURL(URL):
-		#do beautifulsoup shits... i alr wanna die. Update: thinking about bs4 shits still wants me to commit non alive.
+	def crawlURL(self, url):
 		pass
-
 
 def fprint(text) -> None:
 	"""
@@ -101,3 +96,4 @@ def clearConsole() -> None:
 
 if __name__ == "__main__":
 	scraper = NMCScraper()
+	scraper.crawlURL("https://namemc.com/profile/Anme.7")
