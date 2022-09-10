@@ -1,25 +1,37 @@
-import sqlite3 as sqlite
-import bs4 as bs
 import os
+import sqlite3 as sqlite
 from queue import Queue
+
+import bs4 as bs
+import requests
+
 
 class NMCScraper():
 	def __init__(self) -> None:
 		#Database stuff
-		dbCode = self.setupDatabase() #dbCode should be a status code
+		self.setupDatabase() #dbCode should be a status code
 		#Url Stuff
 		self.startURL = self.urlInput()
 		if self.startURL:
 			self.start()
 
-	def setupDatabase(self) -> int:
+	def setupDatabase(self) -> None:
 		"""
-		Check the status of he Database and return a status code 
+		Sets up Database
+		"""
+		self.connection = sqlite.connect("NameMC.db", check_same_thread=False)
+		cur = self.connection.cursor()
+		try:
+			cur.execute("CREATE TABLE Account(Name, uuID, uuID2, prevNames)")
+		except sqlite.OperationalError as e:
+			fprint(e)
+		cur.close()
 
-		Returns:
-			int: status code
-		"""
-		pass
+	def addAccount(self,name, uuID, uuID2, prevNames):
+		cur = self.connection.cursor()
+		cur.execute(f'INSERT INTO Account VALUES({name},{uuID},{uuID2},{prevNames})')
+		self.connection.commit()
+		cur.close()
 
 	def urlInput(self) -> str:
 		"""
@@ -46,28 +58,29 @@ class NMCScraper():
 		Returns:
 			bool: If the given URL has NameMC Structure or not
 		"""
-		# Sample URL: https://namemc.com/profile/JustCallMeSimon
+		# Sample URL: https://namemc.com/profile/JustCallMeSimon.1
 		if url.startswith("https://namemc.com/profile/"):
 			MCname = url.replace("https://namemc.com/profile/","").split(".")
-			if len(MCname[0]) in range(3,17):
-
-				#TODO and only upper lower and number
-
-				return True
-			else:
-				False
+			return True if len(MCname[0]) in range(3,17) else False
 		else:
 			return False
 
 	def start(self):
 		toBeCrawled = Queue(0)
-		#initial crawl of first Page
 		newURLS,Name,prevNames,uuID,uuID2 = self.crawlURL(self.startURL)
-		#add all new urls into q
-		#loop through bla bla bla
+		self.addAccount(Name,uuID,uuID2,prevNames)
+
+		# Note to self, this is 3 AM Code (not really but still) fix tomorrow
+
+		for url in newURLS:
+			if url not in toBeCrawled:
+				toBeCrawled.put(url)
+		while toBeCrawled:
+			nextURL = toBeCrawled.get()
+			newURLS,Name,prevNames,uuID,uuID2 = self.crawlURL(next)
 
 	def crawlURL(URL):
-		#do beautifulsoup shits... i alr wanna die
+		#do beautifulsoup shits... i alr wanna die. Update: thinking about bs4 shits still wants me to commit non alive.
 		pass
 
 
