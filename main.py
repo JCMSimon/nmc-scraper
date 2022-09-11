@@ -33,15 +33,21 @@ class NMCScraper():
         self.connection = sqlite.connect("NameMC.db", check_same_thread=False)
         cur = self.connection.cursor()
         try:
-            cur.execute("CREATE TABLE Account(Name, uuID, uuID_nh, prevNames)")
+            cur.execute("CREATE TABLE Account(Name, uuID, prevNames)")
         except sqlite.OperationalError as e:
             fprint(e)
         cur.close()
 
-    def addAccount(self, name, uuID, uuID_nh, prevNames):
+    # def addAccount(self, name, uuID, prevNames):
+    #     cur = self.connection.cursor()
+    #     cur.execute(
+    #         f'INSERT INTO Account VALUES({str(name)},{str(uuID)},{str(prevNames)})')
+    #     self.connection.commit()
+    #     cur.close()
+
+    def addAccount(self, name, uuID, prevNames):
         cur = self.connection.cursor()
-        cur.execute(
-            f'INSERT INTO Account VALUES({name},{uuID},{uuID_nh},{prevNames})')
+        cur.execute(f'INSERT INTO Account VALUES(?,?,?)', (str(name), str(uuID), str(prevNames)))
         self.connection.commit()
         cur.close()
 
@@ -79,17 +85,19 @@ class NMCScraper():
 
     def start(self):
         toBeCrawled = Queue(0)
-        newURLS, Name, prevNames, uuID, uuID_nh = self.crawlURL(self.startURL)
-        self.addAccount(Name, uuID, uuID_nh, prevNames)
+        Name, uuID, prevNames, newURLS = self.crawlURL(self.startURL)
+        self.addAccount(Name, uuID, prevNames)
 
         # Note to self, this is 3 AM Code (not really but still) fix tomorrow
 
         for url in newURLS:
-            if url not in toBeCrawled:
-                toBeCrawled.put(url)
+            toBeCrawled.put(url)
         while toBeCrawled:
             nextURL = toBeCrawled.get()
-            Name, uuID, uuID_nh, prevNames, newURLS = self.crawlURL(nextURL)
+            fprint(nextURL)
+            fprint(type(nextURL))
+            self.restartDriver()
+            Name, uuID, prevNames, newURLS = self.crawlURL(nextURL)
 
     def crawlURL(self, url):
         self.driver.get(url)
@@ -98,15 +106,15 @@ class NMCScraper():
         try:
             uuID = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located(
                 (By.XPATH, '/html/body/main/div[2]/div[1]/div[2]/div[2]/div[1]/div[3]'))).text
-            uuID_nh = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located(
-                (By.XPATH, '/html/body/main/div[2]/div[1]/div[2]/div[2]/div[2]/div[3]'))).text
+            # uuID_nh = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located(
+            #     (By.XPATH, '/html/body/main/div[2]/div[1]/div[2]/div[2]/div[2]/div[3]'))).text
             prevNamesList = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located(
                 (By.XPATH, '/html/body/main/div[2]/div[1]/div[5]/div[2]'))).text.split("\n")
         except TimeoutException:
             uuID = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located(
                 (By.XPATH, '/html/body/main/div[2]/div[1]/div[1]/div[2]/div[1]/div[3]'))).text
-            uuID_nh = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located(
-                (By.XPATH, '/html/body/main/div[2]/div[1]/div[1]/div[2]/div[2]/div[3]'))).text
+            # uuID_nh = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located(
+            #     (By.XPATH, '/html/body/main/div[2]/div[1]/div[1]/div[2]/div[2]/div[3]'))).text
             prevNamesList = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located(
                 (By.XPATH, '/html/body/main/div[2]/div[1]/div[4]/div[2]'))).text.split("\n")
         except Exception as e:
@@ -115,14 +123,15 @@ class NMCScraper():
         ##############################################
         self.restartDriver()
         ##############################################
+        newURLS = []
         self.driver.get(f"{url}/following")
         try:
-            follows = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located(
+            following = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located(
                 (By.XPATH, '/html/body/main/div[2]/div/div/table/tbody'))).text.encode("ascii", "ignore").decode().split("\n")
-            newURLS = []
-            for nameLine, followLine in zip(prevNamesList[::2], prevNamesList[1::2]):
-                Name = str(nameLine).split(" ")[1]
-                newURLS.append(f"https://namemc.com/profile/{Name}")
+            for nameLine, followLine in zip(following[::2], following[1::2]):
+                aaName = str(nameLine).split(" ")[1]
+                newURLS.append(f"https://namemc.com/profile/{aaName}")
+                fprint(aaName)
         except TimeoutException:
             pass
         ##############################################
@@ -132,37 +141,36 @@ class NMCScraper():
         try:
             follows = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located(
                 (By.XPATH, '/html/body/main/div[2]/div/div/table/tbody'))).text.encode("ascii", "ignore").decode().split("\n")
-            for nameLine, followLine in zip(prevNamesList[::2], prevNamesList[1::2]):
-                Name = str(nameLine).split(" ")[1]
-                newURLS.append(f"https://namemc.com/profile/{Name}")
+            for nameLine, followLine in zip(follows[::2], follows[1::2]):
+                idkName = str(nameLine).split(" ")[1]
+                newURLS.append(f"https://namemc.com/profile/{idkName}")
         except TimeoutException:
             pass
         OriginalName = str(prevNamesList[-1]).split(" ")[1]
         del prevNamesList[-1]
         prevNames = {OriginalName: "Original"}
         for nameLine, dateLine in zip(prevNamesList[::2], prevNamesList[1::2]):
-            Name = str(nameLine).split(" ")[1]
+            AltName = str(nameLine).split(" ")[1]
             preDate = dateLine.replace("• ", "").split(" ")
             Date = str(f"{preDate[0]},{preDate[1]}")
-            prevNames[Name] = Date
+            prevNames[AltName] = Date
         fprint(f"""Summary:
 Scraped Account > {Name}
 Previous Names ({len(prevNames)}) > {prevNames}
-UUIDS > {uuID},{uuID_nh}
+UUID > {uuID}
 New URL's ({len(newURLS)}) > {newURLS}
 		""")
-        time.sleep(100000)
-        # return Name, uuID, uuID_nh, prevNames, newURLS
+        return Name, uuID, prevNames, newURLS
 
     def restartDriver(self):
-        # Listen i know this is disgusting but Cloudflare is focking my bottom if i dont do this
+        # Listen i know this is disgusting but Cloudflare is focking my bottom if i dont do this Hold up... also does it work? guess notxd ik why thi the url for follows etc gets fucked for some reason
         try:
             self.driver.close()
         except:
             pass
         self.driver = webdriver.Chrome(
             ChromeDriverManager().install(), options=self.chrome_options)
-        self.driver.minimize_window()
+        # self.driver.minimize_window()
 
 
 def fprint(text) -> None:
