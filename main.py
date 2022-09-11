@@ -95,7 +95,12 @@ class NMCScraper():
 
 	def crawlURL(self, url):
 		self.driver.get(url)
-		username = WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/div[1]/h1'))).text
+		try:
+			username = WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/div[1]/h1'))).text
+		except TimeoutException:
+			fprint("Couldnt get Username")
+			fprint("Using Placeholder")
+			username = "PlaceHolderUsernameBeLike"
 		try:
 			uuid = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[2]/div[2]/div[1]/div[3]'))).text
 			prevNamesList = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[5]/div[2]'))).text.split("\n")
