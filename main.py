@@ -89,24 +89,24 @@ class NMCScraper():
 		while toBeCrawled:
 			nextURL = toBeCrawled.get()
 			self.resetDriver()
-			Name, uuID, prevNames, newURLS = self.crawlURL(nextURL,toBeCrawled)
-			self.addAccount(Name, uuID, prevNames)
-
+			try:
+				Name, uuID, prevNames, newURLS = self.crawlURL(nextURL,toBeCrawled)
+				self.addAccount(Name, uuID, prevNames)
+			except ValueError:
+				pass
 
 	def crawlURL(self, url, Queue):
 		self.driver.get(url)
 		try:
 			username = WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/div[1]/h1'))).text
-		except TimeoutException:
-			fprint("Couldnt get Username")
-			fprint("Using Placeholder")
-			username = "PlaceHolderUsernameBeLike"
-		try:
 			uuid = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[2]/div[2]/div[1]/div[3]'))).text
 			prevNamesList = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[5]/div[2]'))).text.split("\n")
 		except TimeoutException:
-			uuid = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[1]/div[2]/div[1]/div[3]'))).text
-			prevNamesList = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[4]/div[2]'))).text.split("\n")
+			try:
+				uuid = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[1]/div[2]/div[1]/div[3]'))).text
+				prevNamesList = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[4]/div[2]'))).text.split("\n")
+			except TimeoutException:
+				return
 		except Exception as e:
 			fprint("Something went wrong! Contact JCMS#0557 on Discord (1)")
 			fprint(e)
