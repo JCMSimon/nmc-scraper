@@ -1,8 +1,10 @@
 import logging
 import os
+from shutil import ExecError
 import sqlite3 as sqlite
 from queue import Queue
 
+from tqdm import tqdm
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
@@ -82,7 +84,7 @@ class NMCScraper():
 		self.addAccount(Name, uuID, prevNames)
 		#Start actual process
 		if newURLS:
-			for url in newURLS:
+			for url in tqdm(newURLS,desc="Adding URLS to Queue",ascii=True):
 				toBeCrawled.put(url)
 		else:
 			fprint("Profile does not link to further Profiles. Please Choose a Profile with Followers/Following")
@@ -130,6 +132,7 @@ class NMCScraper():
 
 		self.resetDriver()
 
+		#following
 		newURLS = []
 		self.driver.get(f"{url}/following")
 		try:
@@ -137,18 +140,53 @@ class NMCScraper():
 			for nameLine, _ in zip(following[::2], following[1::2]):
 				followsName = str(nameLine).split(" ")[1]
 				newURLS.append(f"https://namemc.com/profile/{followsName}")
+
+			pages = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/ul/li[1]/a'))).text.split("(")[1].replace(")","")
+			pages = round(float(pages) / 50)
+			try:
+				for page in tqdm(range(2,pages + 1),desc="Gathering Follows",ascii=True):
+					try:
+						self.resetDriver()
+						self.driver.get(f"{url}/following?sort=date:desc&page={page}")
+						following = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div/div/table/tbody'))).text.encode("ascii", "ignore").decode().split("\n")
+						for nameLine, _ in zip(following[::2], following[1::2]):
+							followsName = str(nameLine).split(" ")[1]
+							newURLS.append(f"https://namemc.com/profile/{followsName}")
+					except TimeoutException:
+						continue
+			except:
+				pass
+
 		except TimeoutException:
 			pass
 		fprint(f"Follows: {len(newURLS)} People")
 
 		self.resetDriver()
 
+		#followers
 		self.driver.get(f"{url}/followers")
 		try:
 			follows = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div/div/table/tbody'))).text.encode("ascii", "ignore").decode().split("\n")
 			for nameLine, _ in zip(follows[::2], follows[1::2]):
 				followingName = str(nameLine).split(" ")[1]
 				newURLS.append(f"https://namemc.com/profile/{followingName}")
+
+			pages = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/ul/li[1]/a'))).text.split("(")[1].replace(")","")
+			pages = round(float(pages) / 50)
+			try:
+				for page in tqdm(range(2,pages + 1),desc="Gathering Followers",ascii=True):
+					try:
+						self.resetDriver()
+						self.driver.get(f"{url}/followers?sort=date:desc&page={page}")
+						followers = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div/div/table/tbody'))).text.encode("ascii", "ignore").decode().split("\n")
+						for nameLine, _ in zip(followers[::2], followers[1::2]):
+							followerName = str(nameLine).split(" ")[1]
+							newURLS.append(f"https://namemc.com/profile/{followerName}")
+					except TimeoutException:
+						continue
+			except:
+				pass
+
 		except TimeoutException:
 			pass
 		fprint(f"Followed by: {len(newURLS)} People")
