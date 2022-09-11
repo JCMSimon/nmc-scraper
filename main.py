@@ -171,7 +171,7 @@ class NMCScraper():
 				followingName = str(nameLine).split(" ")[1]
 				newURLS.append(f"https://namemc.com/profile/{followingName}")
 
-			pages = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/ul/li[1]/a'))).text.split("(")[1].replace(")","")
+			pages = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/ul/li[2]/a'))).text.split("(")[1].replace(")","")
 			pages = round(float(pages) / 50)
 			try:
 				for page in tqdm(range(2,pages + 1),desc="Gathering Followers",ascii=True):
