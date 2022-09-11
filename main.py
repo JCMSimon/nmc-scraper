@@ -1,3 +1,4 @@
+import logging
 import os
 import sqlite3 as sqlite
 from queue import Queue
@@ -13,6 +14,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 class NMCScraper():
 	def __init__(self) -> None:
+		logging.getLogger('WDM').setLevel(logging.NOTSET)
 		self.driver = self.setupBrowser()
 		clearConsole()
 		self.setupDatabase()
@@ -53,7 +55,7 @@ class NMCScraper():
 		else:
 			clearConsole()
 			fprint("Input is not a valid NameMC Profile URL")
-			self.urlInput()
+			return self.urlInput()
 
 	def testURL(self, url) -> bool:
 		"""
@@ -87,7 +89,6 @@ class NMCScraper():
 		while toBeCrawled:
 			nextURL = toBeCrawled.get()
 			self.resetDriver()
-			clearConsole()
 			Name, uuID, prevNames, newURLS = self.crawlURL(nextURL)
 			self.addAccount(Name, uuID, prevNames)
 
@@ -95,6 +96,7 @@ class NMCScraper():
 	def crawlURL(self, url):
 		self.driver.get(url)
 		username = WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/div[1]/h1'))).text
+		###TODO
 		try:
 			uuid = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[2]/div[2]/div[1]/div[3]'))).text
 			prevNamesList = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[5]/div[2]'))).text.split("\n")
@@ -102,12 +104,12 @@ class NMCScraper():
 			uuid = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[1]/div[2]/div[1]/div[3]'))).text
 			prevNamesList = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[4]/div[2]'))).text.split("\n")
 		except Exception as e:
-			fprint("Something went wrong! Contact JCMS#0557 on Discord")
+			fprint("Something went wrong! Contact JCMS#0557 on Discord (1)")
 			fprint(e)
+		clearConsole()
 		fprint(f"""Username: {username}
 UUID: {uuid}
-Previous Names (if not none):
-""")
+Previous Names (if not none):""")
 		# Process the prev Names Data
 		OriginalName = str(prevNamesList[-1]).split(" ")[1]
 		del prevNamesList[-1]
