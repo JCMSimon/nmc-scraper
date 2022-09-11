@@ -27,7 +27,7 @@ class NMCScraper():
 	def setupBrowser(self) -> None:
 		options = Options()
 		options.add_argument("log-level=3")
-		options.add_extension("3.4.2_0.crx")
+		options.add_extension("./3.4.2_0.crx")
 		return webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
 	def setupDatabase(self) -> None:
@@ -78,7 +78,7 @@ class NMCScraper():
 	def start(self):
 		fprint("Starting...")
 		toBeCrawled = Queue(0)
-		Name, uuID, prevNames, newURLS = self.crawlURL(self.startURL)
+		Name, uuID, prevNames, newURLS = self.crawlURL(self.startURL, toBeCrawled)
 		self.addAccount(Name, uuID, prevNames)
 		#Start actual process
 		if newURLS:
@@ -89,11 +89,11 @@ class NMCScraper():
 		while toBeCrawled:
 			nextURL = toBeCrawled.get()
 			self.resetDriver()
-			Name, uuID, prevNames, newURLS = self.crawlURL(nextURL)
+			Name, uuID, prevNames, newURLS = self.crawlURL(nextURL,toBeCrawled)
 			self.addAccount(Name, uuID, prevNames)
 
 
-	def crawlURL(self, url):
+	def crawlURL(self, url, Queue):
 		self.driver.get(url)
 		try:
 			username = WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/div[1]/h1'))).text
@@ -110,10 +110,13 @@ class NMCScraper():
 		except Exception as e:
 			fprint("Something went wrong! Contact JCMS#0557 on Discord (1)")
 			fprint(e)
+		if username == "PlaceHolderUsernameBeLike":
+			username = str(prevNamesList[-1]).split(" ")[1]
 		clearConsole()
+		fprint(f"Links in Queue: {Queue.qsize()} \n")
 		fprint(f"""Username: {username}
-UUID: {uuid}
-Previous Names (if not none):""")
+[NMCS] - UUID: {uuid}
+[NMCS] - Previous Names (if not none):""")
 		# Process the prev Names Data
 		OriginalName = str(prevNamesList[-1]).split(" ")[1]
 		del prevNamesList[-1]
