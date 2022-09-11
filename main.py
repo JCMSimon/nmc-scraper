@@ -54,7 +54,7 @@ class NMCScraper():
 			return url.rstrip().lstrip()
 		else:
 			clearConsole()
-			fprint("Input is not a valid NameMC Profile URL")
+			fprint("Input is not a valid NameMC Profile URL (make sure its not smth like 'de.namemc.com')")
 			return self.urlInput()
 
 	def testURL(self, url) -> bool:
