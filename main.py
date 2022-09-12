@@ -1,16 +1,16 @@
 import logging
 import os
-from shutil import ExecError
 import sqlite3 as sqlite
 from queue import Queue
+from shutil import ExecError
 
-from tqdm import tqdm
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from tqdm import tqdm
 from webdriver_manager.chrome import ChromeDriverManager
 
 
@@ -94,7 +94,7 @@ class NMCScraper():
 			try:
 				Name, uuID, prevNames, newURLS = self.crawlURL(nextURL,toBeCrawled)
 				self.addAccount(Name, uuID, prevNames)
-			except ValueError:
+			except (ValueError, TypeError):
 				pass
 
 	def crawlURL(self, url, Queue):
