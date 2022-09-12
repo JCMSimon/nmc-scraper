@@ -2,7 +2,7 @@ import logging
 import os
 import sqlite3 as sqlite
 from queue import Queue
-from shutil import ExecError
+from time import sleep
 
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -10,8 +10,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from tqdm import tqdm
 from webdriver_manager.chrome import ChromeDriverManager
+from tqdm import tqdm
 
 
 class NMCScraper():
@@ -77,7 +77,7 @@ class NMCScraper():
 			return False
 
 
-	def start(self):
+	def start(self) -> None:
 		fprint("Starting...")
 		toBeCrawled = Queue(0)
 		Name, uuID, prevNames, newURLS = self.crawlURL(self.startURL, toBeCrawled)
@@ -98,7 +98,10 @@ class NMCScraper():
 				pass
 
 	def crawlURL(self, url, Queue):
-		self.driver.get(url)
+		try:
+			self.driver.get(url)
+		except TimeoutException:
+			return
 		try:
 			username = WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/div[1]/h1'))).text
 			uuid = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div[1]/div[2]/div[2]/div[1]/div[3]'))).text
@@ -134,14 +137,17 @@ class NMCScraper():
 
 		#following
 		newURLS = []
-		self.driver.get(f"{url}/following")
 		try:
-			following = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div/div/table/tbody'))).text.encode("ascii", "ignore").decode().split("\n")
+			self.driver.get(f"{url}/following")
+		except TimeoutException:
+			pass
+		try:
+			following = WebDriverWait(self.driver,1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div/div/table/tbody'))).text.encode("ascii", "ignore").decode().split("\n")
 			for nameLine, _ in zip(following[::2], following[1::2]):
 				followsName = str(nameLine).split(" ")[1]
 				newURLS.append(f"https://namemc.com/profile/{followsName}")
 
-			pages = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/ul/li[1]/a'))).text.split("(")[1].replace(")","")
+			pages = WebDriverWait(self.driver, 2).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/ul/li[1]/a'))).text.split("(")[1].replace(")","")
 			pages = round(float(pages) / 50)
 			try:
 				for page in tqdm(range(2,pages + 1),desc="Gathering Follows",ascii=True):
@@ -164,14 +170,17 @@ class NMCScraper():
 		self.resetDriver()
 
 		#followers
-		self.driver.get(f"{url}/followers")
 		try:
-			follows = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div/div/table/tbody'))).text.encode("ascii", "ignore").decode().split("\n")
+			self.driver.get(f"{url}/followers")
+		except TimeoutException:
+			pass
+		try:
+			follows = WebDriverWait(self.driver, 1).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[2]/div/div/table/tbody'))).text.encode("ascii", "ignore").decode().split("\n")
 			for nameLine, _ in zip(follows[::2], follows[1::2]):
 				followingName = str(nameLine).split(" ")[1]
 				newURLS.append(f"https://namemc.com/profile/{followingName}")
 
-			pages = WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/ul/li[2]/a'))).text.split("(")[1].replace(")","")
+			pages = WebDriverWait(self.driver, 2).until(EC.visibility_of_element_located((By.XPATH, '/html/body/main/div[1]/ul/li[2]/a'))).text.split("(")[1].replace(")","")
 			pages = round(float(pages) / 50)
 			try:
 				for page in tqdm(range(2,pages + 1),desc="Gathering Followers",ascii=True):
@@ -196,13 +205,14 @@ class NMCScraper():
 		return username, uuid, prevNames, newURLS
 
 
-	def resetDriver(self):
+	def resetDriver(self) -> None:
 		"""
 		Deletes Cookies
 		"""
 		self.driver.delete_all_cookies()
+		sleep(1)
 
-	def addAccount(self, name, uuID, prevNames):
+	def addAccount(self, name, uuID, prevNames) -> None:
 		"""
 		Adds Account Details to Database
 
